@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>JPay Execise</title>
+	<script src="/jquery-3.3.1.min.js"></script>
+	<link th:href="@{datatables.css}" rel="stylesheet">
+	<link th:href="@{bootstrap.min.css}" rel="stylesheet">
+
+</head>
+
+<body>
+
+	<div id="wrap">
+		<div class="container">
+			<h3>A demo of Bootstrap data table</h3>
+			<div class="dataTables_wrapper form-inline" role="grid">
+
+				<div class="row mb-5">
+					<div class="col-sm-6">
+						<div class="pull-left">
+							<div class="dataTables_length">
+								<label>Show <select size="1"
+									id="select-page-size" class="input-sm">
+										<option value="5" selected="selected">5</option>
+										<option value="10">10</option>
+										<option value="20">20</option>
+										<option value="100">100</option></select> Rows
+								</label>
+							</div>
+						</div>
+					</div>
+					
+					<div class="col-sm-6">
+						<div class="pull-right">
+							<div>
+								<label>Country: <select size="1"
+									id="select-country" class="input-sm">
+										<option value="" selected="selected">All</option>
+										<option th:each="countryOpt : ${T(com.jpay.exercise.enums.CountryCodeEnum).values()}" 
+									        th:value="${countryOpt.name}" th:text="${countryOpt.countryName}"></option>
+									        </select>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+				<table class="datatable table table-striped table-bordered">
+					<thead>
+						<tr>
+							<th style="width: 3%">Id</th>
+							<th style="width: 55%">Name</th>
+							<th style="width: 27%">Phone</th>
+							<th style="width: 15%">Country</th>
+						</tr>
+					</thead>
+					<tbody class="customers-table">
+						<!-- auto filled in -->
+					</tbody>
+				</table>
+
+
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="pull-left">
+							<div class="dataTables_info"></div>
+						</div>
+						<div class="pull-right">
+							<div class="dataTables_paginate paging_bs_two_button">
+								<ul class="pagination">
+									<li class="prev">
+										<a href="#" class="paginate_disabled_previous" tabindex="0" role="button">
+											<span class="glyphicon glyphicon-chevron-left"></span>&nbsp;Previous</a>
+									</li>
+									<li class="next">
+										<a href="#" class="paginate_disabled_next" tabindex="0" role="button">Next&nbsp;<span
+											class="glyphicon glyphicon-chevron-right"></span></a>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		$(function() {
+
+			var currentPage = 0;
+			var pageSize = 5;
+			var country = "";
+			loadCustomers(currentPage, pageSize, country);
+
+	        $('#select-page-size').on('change', function () { 
+	        	currentPage = 0;
+	        	pageSize = this.value;
+	        	loadCustomers(currentPage,pageSize, country);
+	        });
+	        
+	        $('#select-country').on('change', function () { 
+	        	currentPage = 0;
+	        	country = this.value;
+	        	loadCustomers(currentPage,pageSize, country);
+	        });
+	        
+	        $('.prev').on('click', function () { 	
+	        	if(!$(this).is(".disabled")) {
+	        		currentPage--;
+	        		loadCustomers(currentPage,pageSize, country);
+	        	}
+	        });
+	        
+	        $('.next').on('click', function () { 	  	
+	        	if(!$(this).is(".disabled")) {
+	        		currentPage++;
+	        		loadCustomers(currentPage,pageSize, country);
+	        	}
+	        });
+
+			function loadCustomers(pageNo, pageSize, country) {
+								
+				var url = '/customers?page=' + pageNo + '&size=' + pageSize + '&country=' + country
+
+				$.get(url, {}, function(resp) {
+					checkPreviousPage(resp.hasPreviousPage);
+					checkNextPage(resp.hasNextPage);
+					setDataTableInfo(pageNo, resp.totalCount);
+					fillCustomerDataTable(resp.items);
+				});
+			}
+			
+			function checkNextPage(hasNextPage) {
+				if(hasNextPage) {
+					$('.next').removeClass("disabled");
+	       		} else {
+	       			$('.next').addClass("disabled");
+	       		}
+			}
+			
+			function checkPreviousPage(hasPreviousPage) {
+				if(hasPreviousPage) {
+					$('.prev').removeClass("disabled");
+        		} else {
+        			$('.prev').addClass("disabled");
+        		}
+			}
+			
+			function setDataTableInfo(pageNo, totalCount) {
+				var totalPage = totalCount < pageSize ? 1 : Math.ceil(totalCount / pageSize)
+				$(".dataTables_info").last().html('Showing ' + (pageNo+1) + ' to ' + totalPage + ' of ' + totalCount + ' entries');
+			}
+			
+			function fillCustomerDataTable(items) {
+				
+				var tableElem = $('.customers-table');
+				tableElem.html('');
+				
+				
+				
+				$.each(items, function(key, item) {
+					var statusIcon = '';
+					if(item.valid) {
+						statusIcon =  '<i style="color: #3c763d;" class="glyphicon glyphicon-ok pull-right"></i>';
+	        		} else {
+	        			statusIcon = '<i style="color: #a94442;" class="glyphicon glyphicon-remove pull-right"></i>';
+	        		}
+					
+					
+					tableElem.append('<tr>' 
+							+ '<td>' + item.id + '</td>'
+							+ '<td>' + item.name + '</td>' 
+							+ '<td>' + item.phone + statusIcon + '</td>' 
+							+ '<td>' + item.country + '</td>' 
+							+ '</tr>');
+				});
+			}
+
+		});
+
+
+	</script>
+</body>
+</html>
